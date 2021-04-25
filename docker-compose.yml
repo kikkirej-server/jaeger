@@ -1,0 +1,65 @@
+version: "3.8"
+services: 
+    cassandra:
+        image: cassandra:3
+        volumes: 
+            - cassandra:/var/lib/cassandra
+        restart: unless-stopped
+    cassandra-schema:
+        image: jaegertracing/jaeger-cassandra-schema:1
+        environment: 
+            MODE: prod
+        depends_on:
+            - cassandra
+    jaeger-agent:
+        image: jaegertracing/jaeger-agent:1
+        restart: unless-stopped
+        environment: 
+            - REPORTER_GRPC_HOST_PORT=jaeger-collector:14250
+        networks: 
+            - default
+            - tracing
+            - metrics
+    jaeger-collector:
+        image: jaegertracing/jaeger-collector:1
+        restart: unless-stopped
+        environment: 
+            - SPAN_STORAGE_TYPE=cassandra
+            - CASSANDRA_SERVERS=cassandra
+            - COLLECTOR_ZIPKIN_HOST_PORT=9411
+            - MODE=prod
+        networks: 
+            - default
+            - tracing
+            - metrics
+    jaeger-query:
+        image: jaegertracing/jaeger-query:1
+        restart: unless-stopped
+        environment: 
+            - SPAN_STORAGE_TYPE=cassandra
+            - CASSANDRA_SERVERS=cassandra
+            - MODE=prod
+        networks: 
+            - default
+            - metrics
+            - tracing
+        labels: 
+            - server.user=${TRAEFIK_IDENT}
+            - traefik.enable=true
+            - traefik.docker.network=${TRACING_NAME}_tracing
+            - traefik.http.routers.jaeger.rule=Host(`jaeger.kikkirej.net`)
+            - traefik.http.routers.jaeger.entrypoints=websecure
+            - traefik.http.routers.jaeger.middlewares=security-chain@file
+            - traefik.http.routers.jaeger.service=jaeger
+            - traefik.http.services.jaeger.loadbalancer.server.port=16686
+
+volumes: 
+    cassandra: {}
+
+networks: 
+    tracing:
+        name: ${TRACING_NAME}_tracing
+    metrics:
+        external: true
+        name: ${PROMETHEUS_NAME}_metrics
+    
