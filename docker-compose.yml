@@ -5,6 +5,9 @@ services:
         volumes: 
             - cassandra:/var/lib/cassandra
         restart: unless-stopped
+        environment: 
+            - HEAP_NEWSIZE=1024M
+            - MAX_HEAP_SIZE=6144M
     cassandra-schema:
         image: jaegertracing/jaeger-cassandra-schema:1
         environment: 
