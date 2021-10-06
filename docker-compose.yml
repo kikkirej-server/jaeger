@@ -50,7 +50,7 @@ services:
             - server.user=${TRAEFIK_IDENT}
             - traefik.enable=true
             - traefik.docker.network=${TRACING_NAME}_tracing
-            - traefik.http.routers.jaeger.rule=Host(`jaeger.kikkirej.net`)
+            - traefik.http.routers.jaeger.rule=Host(`jaeger.${DOMAIN}`)
             - traefik.http.routers.jaeger.entrypoints=websecure
             - traefik.http.routers.jaeger.middlewares=security-chain@file
             - traefik.http.routers.jaeger.service=jaeger
